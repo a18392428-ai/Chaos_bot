@@ -1,6 +1,6 @@
 /**
- * Knight Bot - A WhatsApp Bot
- * Copyright (c) 2024 Professor
+ * Chaos_bot - A WhatsApp Bot
+ * Copyright (c) 2026 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the MIT License.
@@ -57,7 +57,7 @@ setInterval(() => store.writeToFile(), settings.storeWriteInterval || 10000)
 setInterval(() => {
     if (global.gc) {
         global.gc()
-        console.log('🧹 Garbage collection completed')
+        console.log('🧹 تم إكمال تنظيف الذاكرة المؤقتة (Garbage Collection)')
     }
 }, 60_000) // every 1 minute
 
@@ -65,15 +65,15 @@ setInterval(() => {
 setInterval(() => {
     const used = process.memoryUsage().rss / 1024 / 1024
     if (used > 400) {
-        console.log('⚠️ RAM too high (>400MB), restarting bot...')
+        console.log('⚠️ استهلاك الذاكرة مرتفع جداً (>400MB)، يتم إعادة تشغيل البوت...')
         process.exit(1) // Panel will auto-restart
     }
 }, 30_000) // check every 30 seconds
 
-let phoneNumber = "911234567890"
+let phoneNumber = "201127265942"
 let owner = JSON.parse(fs.readFileSync('./data/owner.json'))
 
-global.botname = "KNIGHT BOT"
+global.botname = "CHAOS BOT"
 global.themeemoji = "•"
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
 const useMobile = process.argv.includes("--mobile")
@@ -134,16 +134,12 @@ async function startXeonBotInc() {
                 await handleStatus(XeonBotInc, chatUpdate);
                 return;
             }
-            // In private mode, only block non-group messages (allow groups for moderation)
-            // Note: XeonBotInc.public is not synced, so we check mode in main.js instead
-            // This check is kept for backward compatibility but mainly blocks DMs
             if (!XeonBotInc.public && !mek.key.fromMe && chatUpdate.type === 'notify') {
                 const isGroup = mek.key?.remoteJid?.endsWith('@g.us')
-                if (!isGroup) return // Block DMs in private mode, but allow group messages
+                if (!isGroup) return 
             }
             if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
 
-            // Clear message retry cache to prevent memory bloat
             if (XeonBotInc?.msgRetryCounterCache) {
                 XeonBotInc.msgRetryCounterCache.clear()
             }
@@ -151,17 +147,16 @@ async function startXeonBotInc() {
             try {
                 await handleMessages(XeonBotInc, chatUpdate, true)
             } catch (err) {
-                console.error("Error in handleMessages:", err)
-                // Only try to send error message if we have a valid chatId
+                console.error("خطأ في معالجة الرسائل:", err)
                 if (mek.key && mek.key.remoteJid) {
                     await XeonBotInc.sendMessage(mek.key.remoteJid, {
-                        text: '❌ An error occurred while processing your message.',
+                        text: '❌ حدث خطأ أثناء معالجة رسالتك.',
                         contextInfo: {
                             forwardingScore: 1,
                             isForwarded: true,
                             forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363161513685998@newsletter',
-                                newsletterName: 'KnightBot MD',
+                                newsletterJid: '0029VbDFgQpDDmFeMbSH9i2y@newsletter',
+                                newsletterName: 'Chaos Bot',
                                 serverMessageId: -1
                             }
                         }
@@ -169,11 +164,10 @@ async function startXeonBotInc() {
                 }
             }
         } catch (err) {
-            console.error("Error in messages.upsert:", err)
+            console.error("خطأ في استقبال الرسائل:", err)
         }
     })
 
-    // Add these event handlers for better functionality
     XeonBotInc.decodeJid = (jid) => {
         if (!jid) return jid
         if (/:\d+@/gi.test(jid)) {
@@ -213,22 +207,20 @@ async function startXeonBotInc() {
 
     // Handle pairing code
     if (pairingCode && !XeonBotInc.authState.creds.registered) {
-        if (useMobile) throw new Error('Cannot use pairing code with mobile api')
+        if (useMobile) throw new Error('لا يمكن استخدام كود الاقتران مع واجهة الموبايل')
 
         let phoneNumber
         if (!!global.phoneNumber) {
             phoneNumber = global.phoneNumber
         } else {
-            phoneNumber = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFormat: 6281376552730 (without + or spaces) : `)))
+            phoneNumber = await question(chalk.bgBlack(chalk.greenBright(`الرجاء إدخال رقم الواتساب الخاص بك 😍\nالصيغة: 201127265942 (بدون علامة + أو مسافات) : `)))
         }
 
-        // Clean the phone number - remove any non-digit characters
         phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
 
-        // Validate the phone number using awesome-phonenumber
         const pn = require('awesome-phonenumber');
         if (!pn('+' + phoneNumber).isValid()) {
-            console.log(chalk.red('Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, etc.) without + or spaces.'));
+            console.log(chalk.red('رقم الهاتف غير صحيح. الرجاء إدخال رقمك بالصيغة الدولية بدون علامة + أو مسافات.'));
             process.exit(1);
         }
 
@@ -236,11 +228,11 @@ async function startXeonBotInc() {
             try {
                 let code = await XeonBotInc.requestPairingCode(phoneNumber)
                 code = code?.match(/.{1,4}/g)?.join("-") || code
-                console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)))
-                console.log(chalk.yellow(`\nPlease enter this code in your WhatsApp app:\n1. Open WhatsApp\n2. Go to Settings > Linked Devices\n3. Tap "Link a Device"\n4. Enter the code shown above`))
+                console.log(chalk.black(chalk.bgGreen(`كود الاقتران الخاص بك : `)), chalk.black(chalk.white(code)))
+                console.log(chalk.yellow(`\nالرجاء إدخال هذا الكود في تطبيق واتساب:\n1. افتح واتساب\n2. اذهب إلى الإعدادات > الأجهزة المرتبطة\n3. اضغط على "ربط جهاز"\n4. أدخل الكود الظاهر أعلاه`))
             } catch (error) {
-                console.error('Error requesting pairing code:', error)
-                console.log(chalk.red('Failed to get pairing code. Please check your phone number and try again.'))
+                console.error('خطأ في طلب كود الاقتران:', error)
+                console.log(chalk.red('فشل الحصول على كود الاقتران. يجدر التحقق من رقم الهاتف والمحاولة مرة أخرى.'))
             }
         }, 3000)
     }
@@ -250,74 +242,70 @@ async function startXeonBotInc() {
         const { connection, lastDisconnect, qr } = s
         
         if (qr) {
-            console.log(chalk.yellow('📱 QR Code generated. Please scan with WhatsApp.'))
+            console.log(chalk.yellow('📱 تم إنشاء QR Code. الرجاء مسحه بواسطة واتساب.'))
         }
         
         if (connection === 'connecting') {
-            console.log(chalk.yellow('🔄 Connecting to WhatsApp...'))
+            console.log(chalk.yellow('🔄 جاري الاتصال بالواتساب...'))
         }
         
         if (connection == "open") {
             console.log(chalk.magenta(` `))
-            console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(XeonBotInc.user, null, 2)))
+            console.log(chalk.yellow(`🌿 تم الاتصال بـ => ` + JSON.stringify(XeonBotInc.user, null, 2)))
 
             try {
                 const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
                 await XeonBotInc.sendMessage(botNumber, {
-                    text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!\n\n✅Make sure to join below channel`,
+                    text: `🤖 تم اتصال البوت بنجاح!\n\n⏰ الوقت: ${new Date().toLocaleString()}\n✅ الحالة: متصل وجاهز للعمل!\n\n✅لا تنسَ الانضمام للقناة أدناه`,
                     contextInfo: {
                         forwardingScore: 1,
                         isForwarded: true,
                         forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363161513685998@newsletter',
-                            newsletterName: 'KnightBot MD',
+                            newsletterJid: '0029VbDFgQpDDmFeMbSH9i2y@newsletter',
+                            newsletterName: 'Chaos Bot',
                             serverMessageId: -1
                         }
                     }
                 });
             } catch (error) {
-                console.error('Error sending connection message:', error.message)
+                console.error('خطأ في إرسال رسالة الاتصال:', error.message)
             }
 
             await delay(1999)
-            console.log(chalk.yellow(`\n\n                  ${chalk.bold.blue(`[ ${global.botname || 'KNIGHT BOT'} ]`)}\n\n`))
+            console.log(chalk.yellow(`\n\n                  ${chalk.bold.blue(`[ ${global.botname || 'CHAOS BOT'} ]`)}\n\n`))
             console.log(chalk.cyan(`< ================================================== >`))
-            console.log(chalk.magenta(`\n${global.themeemoji || '•'} YT CHANNEL: MR UNIQUE HACKER`))
-            console.log(chalk.magenta(`${global.themeemoji || '•'} GITHUB: mrunqiuehacker`))
-            console.log(chalk.magenta(`${global.themeemoji || '•'} WA NUMBER: ${owner}`))
-            console.log(chalk.magenta(`${global.themeemoji || '•'} CREDIT: MR UNIQUE HACKER`))
-            console.log(chalk.green(`${global.themeemoji || '•'} 🤖 Bot Connected Successfully! ✅`))
-            console.log(chalk.blue(`Bot Version: ${settings.version}`))
+            console.log(chalk.magenta(`\n${global.themeemoji || '•'} قناة الواتساب: انضم لقناتنا`))
+            console.log(chalk.magenta(`${global.themeemoji || '•'} رقم المالك: ${owner}`))
+            console.log(chalk.green(`${global.themeemoji || '•'} 🤖 تم ربط وتشغيل البوت بنجاح! ✅`))
+            console.log(chalk.blue(`إصدار البوت: ${settings.version}`))
         }
         
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut
             const statusCode = lastDisconnect?.error?.output?.statusCode
             
-            console.log(chalk.red(`Connection closed due to ${lastDisconnect?.error}, reconnecting ${shouldReconnect}`))
+            console.log(chalk.red(`انقطع الاتصال بسبب ${lastDisconnect?.error}، جاري إعادة الاتصال ${shouldReconnect}`))
             
             if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 try {
                     rmSync('./session', { recursive: true, force: true })
-                    console.log(chalk.yellow('Session folder deleted. Please re-authenticate.'))
+                    console.log(chalk.yellow('تم حذف مجلد الجلسة. الرجاء إعادة المصادقة.'))
                 } catch (error) {
-                    console.error('Error deleting session:', error)
+                    console.error('خطأ في حذف الجلسة:', error)
                 }
-                console.log(chalk.red('Session logged out. Please re-authenticate.'))
+                console.log(chalk.red('تم تسجيل خروج الجلسة. يجدر إعادة ربط البوت.'))
             }
             
             if (shouldReconnect) {
-                console.log(chalk.yellow('Reconnecting...'))
+                console.log(chalk.yellow('جاري إعادة الاتصال...'))
                 await delay(5000)
                 startXeonBotInc()
             }
         }
     })
 
-    // Track recently-notified callers to avoid spamming messages
     const antiCallNotified = new Set();
 
-    // Anticall handler: block callers when enabled
     XeonBotInc.ev.on('call', async (calls) => {
         try {
             const { readState: readAnticallState } = require('./commands/anticall');
@@ -327,7 +315,6 @@ async function startXeonBotInc() {
                 const callerJid = call.from || call.peerJid || call.chatId;
                 if (!callerJid) continue;
                 try {
-                    // First: attempt to reject the call if supported
                     try {
                         if (typeof XeonBotInc.rejectCall === 'function' && call.id) {
                             await XeonBotInc.rejectCall(call.id, callerJid);
@@ -336,21 +323,17 @@ async function startXeonBotInc() {
                         }
                     } catch {}
 
-                    // Notify the caller only once within a short window
                     if (!antiCallNotified.has(callerJid)) {
                         antiCallNotified.add(callerJid);
                         setTimeout(() => antiCallNotified.delete(callerJid), 60000);
-                        await XeonBotInc.sendMessage(callerJid, { text: '📵 Anticall is enabled. Your call was rejected and you will be blocked.' });
+                        await XeonBotInc.sendMessage(callerJid, { text: '📵 خاصية منع المكالمات مفعلة. تم رفض مكالمتك.' });
                     }
                 } catch {}
-                // Then: block after a short delay to ensure rejection and message are processed
                 setTimeout(async () => {
                     try { await XeonBotInc.updateBlockStatus(callerJid, 'block'); } catch {}
                 }, 800);
             }
-        } catch (e) {
-            // ignore
-        }
+        } catch (e) {}
     });
 
     XeonBotInc.ev.on('group-participants.update', async (update) => {
@@ -373,30 +356,28 @@ async function startXeonBotInc() {
 
     return XeonBotInc
     } catch (error) {
-        console.error('Error in startXeonBotInc:', error)
+        console.error('خطأ في تشغيل البوت:', error)
         await delay(5000)
         startXeonBotInc()
     }
 }
 
-
-// Start the bot with error handling
 startXeonBotInc().catch(error => {
-    console.error('Fatal error:', error)
+    console.error('خطأ فادح:', error)
     process.exit(1)
 })
 process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err)
+    console.error('استثناء غير معالج:', err)
 })
 
 process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Rejection:', err)
+    console.error('رفض غير معالج:', err)
 })
 
 let file = require.resolve(__filename)
 fs.watchFile(file, () => {
     fs.unwatchFile(file)
-    console.log(chalk.redBright(`Update ${__filename}`))
+    console.log(chalk.redBright(`تم تحديث الملف ${__filename}`))
     delete require.cache[file]
     require(file)
 })
