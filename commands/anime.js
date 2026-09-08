@@ -9,8 +9,15 @@ const ANIMU_BASE = 'https://api.some-random-api.com/animu';
 
 function normalizeType(input) {
     const lower = (input || '').toLowerCase();
-    if (lower === 'facepalm' || lower === 'face_palm') return 'face-palm';
-    if (lower === 'quote' || lower === 'animu-quote' || lower === 'animuquote') return 'quote';
+    if (lower === 'facepalm' || lower === 'face_palm' || lower === 'وجه') return 'face-palm';
+    if (lower === 'quote' || lower === 'animu-quote' || lower === 'animuquote' || lower === 'حكمة' || lower === 'مقولة') return 'quote';
+    if (lower === 'أكل' || lower === 'nom') return 'nom';
+    if (lower === 'وخز' || lower === 'poke') return 'poke';
+    if (lower === 'بكي' || lower === 'cry') return 'cry';
+    if (lower === 'تقبيل' || lower === 'kiss') return 'kiss';
+    if (lower === 'طبطبة' || lower === 'pat') return 'pat';
+    if (lower === 'حضن' || lower === 'hug') return 'hug';
+    if (lower === 'غمزة' || lower === 'wink') return 'wink';
     return lower;
 }
 
@@ -85,7 +92,7 @@ async function sendAnimu(sock, chatId, message, type) {
                 );
                 return;
             } catch (error) {
-                console.error('Error converting media to sticker:', error);
+                console.error('خطأ أثناء تحويل الوسائط إلى ملصق:', error);
             }
         }
 
@@ -93,7 +100,7 @@ async function sendAnimu(sock, chatId, message, type) {
         try {
             await sock.sendMessage(
                 chatId,
-                { image: { url: link }, caption: `anime: ${type}` },
+                { image: { url: link }, caption: `أنمي: ${type}` },
                 { quoted: message }
             );
             return;
@@ -110,7 +117,7 @@ async function sendAnimu(sock, chatId, message, type) {
 
     await sock.sendMessage(
         chatId,
-        { text: '❌ Failed to fetch animu.' },
+        { text: '❌ فشل في جلب بيانات الأنمي.' },
         { quoted: message }
     );
 }
@@ -123,31 +130,24 @@ async function animeCommand(sock, chatId, message, args) {
         'nom', 'poke', 'cry', 'kiss', 'pat', 'hug', 'wink', 'face-palm', 'quote'
     ];
 
+    const supportedArabic = 'أكل، وخز، بكي، تقبيل، طبطبة، حضن، غمزة، وجه، مقولة';
+
     try {
         if (!sub) {
-            // Fetch supported types from API for dynamic help
-            try {
-                const res = await axios.get(ANIMU_BASE);
-                const apiTypes = res.data && res.data.types ? res.data.types.map(s => s.replace('/animu/', '')).join(', ') : supported.join(', ');
-                await sock.sendMessage(chatId, { text: `Usage: .animu <type>\nTypes: ${apiTypes}` }, { quoted: message });
-            } catch {
-                await sock.sendMessage(chatId, { text: `Usage: .animu <type>\nTypes: ${supported.join(', ')}` }, { quoted: message });
-            }
+            await sock.sendMessage(chatId, { text: `طريقة الاستخدام: .أنمي <النوع>\n\nالأنواع المتاحة:\n- nom (أكل)\n- poke (وخز)\n- cry (بكي)\n- kiss (تقبيل)\n- pat (طبطبة)\n- hug (حضن)\n- wink (غمزة)\n- face-palm (وجه)\n- quote (مقولة)` }, { quoted: message });
             return;
         }
 
         if (!supported.includes(sub)) {
-            await sock.sendMessage(chatId, { text: `❌ Unsupported type: ${sub}. Try one of: ${supported.join(', ')}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ نوع غير مدعوم: "${subArg}". الأنواع المتاحة:\n${supportedArabic}` }, { quoted: message });
             return;
         }
 
         await sendAnimu(sock, chatId, message, sub);
     } catch (err) {
-        console.error('Error in animu command:', err);
-        await sock.sendMessage(chatId, { text: '❌ An error occurred while fetching animu.' }, { quoted: message });
+        console.error('خطأ في أمر الأنمي:', err);
+        await sock.sendMessage(chatId, { text: '❌ حدث خطأ أثناء جلب بيانات الأنمي.' }, { quoted: message });
     }
 }
 
 module.exports = { animeCommand };
-
-
