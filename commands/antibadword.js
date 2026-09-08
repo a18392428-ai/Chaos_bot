@@ -4,20 +4,20 @@ const isAdminHelper = require('../lib/isAdmin');
 async function antibadwordCommand(sock, chatId, message, senderId, isSenderAdmin) {
     try {
         if (!isSenderAdmin) {
-            await sock.sendMessage(chatId, { text: '```For Group Admins Only!```' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: '```هذا الأمر مخصص لمشرفي المجموعات فقط!```' }, { quoted: message });
             return;
         }
 
-        // Extract match from message
+        // استخراج النص أو الأمر المرسل
         const text = message.message?.conversation || 
                     message.message?.extendedTextMessage?.text || '';
         const match = text.split(' ').slice(1).join(' ');
 
         await handleAntiBadwordCommand(sock, chatId, message, match);
     } catch (error) {
-        console.error('Error in antibadword command:', error);
-        await sock.sendMessage(chatId, { text: '*Error processing antibadword command*' }, { quoted: message });
+        console.error('خطأ في أمر منع الكلمات البذيئة (chaos-bot):', error);
+        await sock.sendMessage(chatId, { text: '*حدث خطأ أثناء معالجة أمر منع الكلمات البذيئة*' }, { quoted: message });
     }
 }
 
-module.exports = antibadwordCommand; 
+module.exports = antibadwordCommand;
