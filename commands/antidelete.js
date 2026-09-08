@@ -8,12 +8,12 @@ const messageStore = new Map();
 const CONFIG_PATH = path.join(__dirname, '../data/antidelete.json');
 const TEMP_MEDIA_DIR = path.join(__dirname, '../tmp');
 
-// Ensure tmp dir exists
+// التأكد من وجود مجلد الملفات المؤقتة
 if (!fs.existsSync(TEMP_MEDIA_DIR)) {
     fs.mkdirSync(TEMP_MEDIA_DIR, { recursive: true });
 }
 
-// Function to get folder size in MB
+// دالة لحساب حجم المجلد بالميجابايت
 const getFolderSizeInMB = (folderPath) => {
     try {
         const files = fs.readdirSync(folderPath);
@@ -26,14 +26,14 @@ const getFolderSizeInMB = (folderPath) => {
             }
         }
 
-        return totalSize / (1024 * 1024); // Convert bytes to MB
+        return totalSize / (1024 * 1024); // تحويل البايت إلى ميجابايت
     } catch (err) {
-        console.error('Error getting folder size:', err);
+        console.error('خطأ في حساب حجم المجلد:', err);
         return 0;
     }
 };
 
-// Function to clean temp folder if size exceeds 10MB
+// دالة لتنظيف مجلد المؤقتات إذا تجاوز الحجم 200 ميجابايت
 const cleanTempFolderIfLarge = () => {
     try {
         const sizeMB = getFolderSizeInMB(TEMP_MEDIA_DIR);
@@ -46,14 +46,14 @@ const cleanTempFolderIfLarge = () => {
             }
         }
     } catch (err) {
-        console.error('Temp cleanup error:', err);
+        console.error('خطأ في تنظيف مجلد المؤقتات:', err);
     }
 };
 
-// Start periodic cleanup check every 1 minute
+// فحص وتنظيف دوري كل دقيقة
 setInterval(cleanTempFolderIfLarge, 60 * 1000);
 
-// Load config
+// قراءة الإعدادات
 function loadAntideleteConfig() {
     try {
         if (!fs.existsSync(CONFIG_PATH)) return { enabled: false };
@@ -63,51 +63,51 @@ function loadAntideleteConfig() {
     }
 }
 
-// Save config
+// حفظ الإعدادات
 function saveAntideleteConfig(config) {
     try {
         fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
     } catch (err) {
-        console.error('Config save error:', err);
+        console.error('خطأ في حفظ الإعدادات:', err);
     }
 }
 
 const isOwnerOrSudo = require('../lib/isOwner');
 
-// Command Handler
+// معالج الأوامر
 async function handleAntideleteCommand(sock, chatId, message, match) {
     const senderId = message.key.participant || message.key.remoteJid;
     const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
     
     if (!message.key.fromMe && !isOwner) {
-        return sock.sendMessage(chatId, { text: '*Only the bot owner can use this command.*' }, { quoted: message });
+        return sock.sendMessage(chatId, { text: '```هذا الأمر مخصص لمالك بوت (chaos-bot) فقط.```' }, { quoted: message });
     }
 
     const config = loadAntideleteConfig();
 
     if (!match) {
         return sock.sendMessage(chatId, {
-            text: `*ANTIDELETE SETUP*\n\nCurrent Status: ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n*.antidelete on* - Enable\n*.antidelete off* - Disable`
+            text: `*🛡️ إعدادات منع الحذف (chaos-bot)*\n\nالحالة الحالية: ${config.enabled ? '✅ مفعل' : '❌ معطل'}\n\n*.منع-الحذف تشغيل* - لتفعيل النظام\n*.منع-الحذف ايقاف* - لإيقاف النظام`
         }, {quoted: message});
     }
 
-    if (match === 'on') {
+    if (match === 'on' || match === 'تشغيل') {
         config.enabled = true;
-    } else if (match === 'off') {
+    } else if (match === 'off' || match === 'ايقاف') {
         config.enabled = false;
     } else {
-        return sock.sendMessage(chatId, { text: '*Invalid command. Use .antidelete to see usage.*' }, {quoted:message});
+        return sock.sendMessage(chatId, { text: '*أمر غير صحيح. استخدم .منع-الحذف لمعرفة طريقة الاستخدام.*' }, {quoted:message});
     }
 
     saveAntideleteConfig(config);
-    return sock.sendMessage(chatId, { text: `*Antidelete ${match === 'on' ? 'enabled' : 'disabled'}*` }, {quoted:message});
+    return sock.sendMessage(chatId, { text: `*تم ${config.enabled ? 'تفعيل' : 'إلغاء تفعيل'} نظام منع الحذف بنجاح في chaos-bot.*` }, {quoted:message});
 }
 
-// Store incoming messages (also handles anti-view-once by forwarding immediately)
+// تخزين الرسائل الواردة (مع معالجة العرض لمرة واحدة الفورية)
 async function storeMessage(sock, message) {
     try {
         const config = loadAntideleteConfig();
-        if (!config.enabled) return; // Don't store if antidelete is disabled
+        if (!config.enabled) return; // عدم التخزين إذا كان النظام معطلاً
 
         if (!message.key?.id) return;
 
@@ -119,10 +119,9 @@ async function storeMessage(sock, message) {
 
         const sender = message.key.participant || message.key.remoteJid;
 
-        // Detect content (including view-once wrappers)
+        // اكتشاف المحتوى (بما في ذلك وسائط العرض لمرة واحدة)
         const viewOnceContainer = message.message?.viewOnceMessageV2?.message || message.message?.viewOnceMessage?.message;
         if (viewOnceContainer) {
-            // unwrap view-once content
             if (viewOnceContainer.imageMessage) {
                 mediaType = 'image';
                 content = viewOnceContainer.imageMessage.caption || '';
@@ -177,14 +176,14 @@ async function storeMessage(sock, message) {
             timestamp: new Date().toISOString()
         });
 
-        // Anti-ViewOnce: forward immediately to owner if captured
+        // توجيه رسائل العرض لمرة واحدة للمالك فوراً عند التقاطها
         if (isViewOnce && mediaType && fs.existsSync(mediaPath)) {
             try {
                 const ownerNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
                 const senderName = sender.split('@')[0];
                 const mediaOptions = {
-                    caption: `*Anti-ViewOnce ${mediaType}*
-From: @${senderName}`,
+                    caption: `*👀 كشف عرض لمرة واحدة (${mediaType}) - chaos-bot*
+المرسل: @${senderName}`,
                     mentions: [sender]
                 };
                 if (mediaType === 'image') {
@@ -192,19 +191,18 @@ From: @${senderName}`,
                 } else if (mediaType === 'video') {
                     await sock.sendMessage(ownerNumber, { video: { url: mediaPath }, ...mediaOptions });
                 }
-                // Cleanup immediately for view-once forward
                 try { fs.unlinkSync(mediaPath); } catch {}
             } catch (e) {
-                // ignore
+                // تجاهل الأخطاء
             }
         }
 
     } catch (err) {
-        console.error('storeMessage error:', err);
+        console.error('خطأ في تخزين الرسالة:', err);
     }
 }
 
-// Handle message deletion
+// معالجة حذف الرسائل
 async function handleMessageRevocation(sock, revocationMessage) {
     try {
         const config = loadAntideleteConfig();
@@ -224,21 +222,21 @@ async function handleMessageRevocation(sock, revocationMessage) {
         const groupName = original.group ? (await sock.groupMetadata(original.group)).subject : '';
 
         const time = new Date().toLocaleString('en-US', {
-            timeZone: 'Asia/Kolkata',
+            timeZone: 'Africa/Cairo',
             hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit',
             day: '2-digit', month: '2-digit', year: 'numeric'
         });
 
-        let text = `*🔰 ANTIDELETE REPORT 🔰*\n\n` +
-            `*🗑️ Deleted By:* @${deletedBy.split('@')[0]}\n` +
-            `*👤 Sender:* @${senderName}\n` +
-            `*📱 Number:* ${sender}\n` +
-            `*🕒 Time:* ${time}\n`;
+        let text = `*🔰 تقرير منع الحذف (chaos-bot) 🔰*\n\n` +
+            `*🗑️ تم الحذف بواسطة:* @${deletedBy.split('@')[0]}\n` +
+            `*👤 مرسل الرسالة:* @${senderName}\n` +
+            `*📱 الرقم:* ${sender}\n` +
+            `*🕒 الوقت:* ${time}\n`;
 
-        if (groupName) text += `*👥 Group:* ${groupName}\n`;
+        if (groupName) text += `*👥 المجموعة:* ${groupName}\n`;
 
         if (original.content) {
-            text += `\n*💬 Deleted Message:*\n${original.content}`;
+            text += `\n*💬 الرسالة المحذوفة:*\n${original.content}`;
         }
 
         await sock.sendMessage(ownerNumber, {
@@ -246,10 +244,10 @@ async function handleMessageRevocation(sock, revocationMessage) {
             mentions: [deletedBy, sender]
         });
 
-        // Media sending
+        // إرسال الوسائط المحذوفة
         if (original.mediaType && fs.existsSync(original.mediaPath)) {
             const mediaOptions = {
-                caption: `*Deleted ${original.mediaType}*\nFrom: @${senderName}`,
+                caption: `*تم حذف ${original.mediaType}*\nالمرسل: @${senderName} (عبر chaos-bot)`,
                 mentions: [sender]
             };
 
@@ -284,22 +282,22 @@ async function handleMessageRevocation(sock, revocationMessage) {
                 }
             } catch (err) {
                 await sock.sendMessage(ownerNumber, {
-                    text: `⚠️ Error sending media: ${err.message}`
+                    text: `⚠️ خطأ أثناء إرسال الوسائط: ${err.message}`
                 });
             }
 
-            // Cleanup
+            // تنظيف الملف المؤقت
             try {
                 fs.unlinkSync(original.mediaPath);
             } catch (err) {
-                console.error('Media cleanup error:', err);
+                console.error('خطأ في تنظيف الوسائط:', err);
             }
         }
 
         messageStore.delete(messageId);
 
     } catch (err) {
-        console.error('handleMessageRevocation error:', err);
+        console.error('خطأ في معالجة استرجاع الرسائل المحذوفة:', err);
     }
 }
 
