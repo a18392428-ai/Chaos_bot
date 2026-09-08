@@ -24,21 +24,20 @@ async function anticallCommand(sock, chatId, message, args) {
     const state = readState();
     const sub = (args || '').trim().toLowerCase();
 
-    if (!sub || (sub !== 'on' && sub !== 'off' && sub !== 'status')) {
-        await sock.sendMessage(chatId, { text: '*ANTICALL*\n\n.anticall on  - Enable auto-block on incoming calls\n.anticall off - Disable anticall\n.anticall status - Show current status' }, { quoted: message });
+    // التحقق من المدخلات أو عرض قائمة المساعدة باللغة العربية
+    if (!sub || (sub !== 'on' && sub !== 'off' && sub !== 'status' && sub !== 'تشغيل' && sub !== 'ايقاف' && sub !== 'حالة')) {
+        await sock.sendMessage(chatId, { text: '*🛡️ نظام منع المكالمات (chaos-bot)*\n\n.منع-المكالمات تشغيل  - لتفعيل الحظر التلقائي للمكالمات الواردة\n.منع-المكالمات ايقاف - لإلغاء تفعيل منع المكالمات\n.منع-المكالمات حالة - لعرض الحالة الحالية' }, { quoted: message });
         return;
     }
 
-    if (sub === 'status') {
-        await sock.sendMessage(chatId, { text: `Anticall is currently *${state.enabled ? 'ON' : 'OFF'}*.` }, { quoted: message });
+    if (sub === 'status' || sub === 'حالة') {
+        await sock.sendMessage(chatId, { text: `حالة منع المكالمات في *chaos-bot* هي: *${state.enabled ? 'مفعل 🟢' : 'معطل 🔴'}*.` }, { quoted: message });
         return;
     }
 
-    const enable = sub === 'on';
+    const enable = (sub === 'on' || sub === 'تشغيل');
     writeState(enable);
-    await sock.sendMessage(chatId, { text: `Anticall is now *${enable ? 'ENABLED' : 'DISABLED'}*.` }, { quoted: message });
+    await sock.sendMessage(chatId, { text: `تم ${enable ? 'تفعيل (تشغيل)' : 'إلغاء تفعيل (إيقاف)'} نظام منع المكالمات بنجاح في *chaos-bot*.` }, { quoted: message });
 }
 
 module.exports = { anticallCommand, readState };
-
-
